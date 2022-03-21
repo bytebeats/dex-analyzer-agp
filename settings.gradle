@@ -1,0 +1,3 @@
+rootProject.name = "dex-analyzer-agp"
+include ':app'
+include ':dex-analyzer'
