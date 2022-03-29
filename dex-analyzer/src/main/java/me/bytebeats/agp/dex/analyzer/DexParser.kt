@@ -115,17 +115,16 @@ class DexParser(private val dexFile: RandomAccessFile) {
         val count = mHeaderItem.stringIdsSize
         val strIdxOffsets = IntArray(count)
 
-        println("Trying to read $count Strings")
+        println("Try to read $count Strings")
 
         seek(mHeaderItem.stringIdsOff)
         for (i in 0 until count) {
             strIdxOffsets[i] = readInt()
         }
-        mStrings = Array(count) { "" }
         seek(strIdxOffsets[0])
-        for (i in 0 until count) {
+        mStrings = Array(count) { i ->
             seek(strIdxOffsets[i])
-            mStrings[i] = readString()
+            readString()
         }
     }
 
@@ -134,6 +133,12 @@ class DexParser(private val dexFile: RandomAccessFile) {
      */
     @Throws(IOException::class)
     internal fun parseTypeIds() {
+        val count = mHeaderItem.typeIdsSize
+        println("Try to read $count typeIds")
+        seek(mHeaderItem.typeIdsOff)
+        mTypeIds = Array(count) {
+            TypeIdItem(descriptorIdx = readInt(), true)
+        }
     }
 
     /**
@@ -141,6 +146,31 @@ class DexParser(private val dexFile: RandomAccessFile) {
      */
     @Throws(IOException::class)
     internal fun parseProtoIds() {
+        val count = mHeaderItem.protoIdsSize
+        println("Try to read $count protoIds")
+        seek(mHeaderItem.protoIdsOff)
+        /*
+         * Read the proto ID items.
+         */
+        mProtoIds = Array(count) {
+            ProtoIdItem(shortyIdx = readInt(), returnTypeIdx = readInt(), parametersOff = readInt(), intArrayOf())
+        }
+
+        /*
+         * Go back through and read the type lists.
+         */
+        for (protoId in mProtoIds) {
+            val offset = protoId.parametersOff
+            if (offset == 0) {
+                protoId.types = IntArray(0)
+            } else {
+                seek(offset)
+                val size = readInt()//count of entries in list
+                protoId.types = IntArray(size) {
+                    readShort().toInt() and 0xffff
+                }
+            }
+        }
     }
 
     /**
@@ -415,7 +445,7 @@ class DexParser(private val dexFile: RandomAccessFile) {
      * @param descriptorIdx index into string_ids
      * @param internal defined within this DEX file?
      */
-    data class TypeIdItem(val descriptorIdx: Int, val internal: Boolean)
+    data class TypeIdItem(val descriptorIdx: Int, var internal: Boolean)
 
     /**
      * Holds the contents of a proto_id_item.
@@ -425,7 +455,12 @@ class DexParser(private val dexFile: RandomAccessFile) {
      * @param parametersOff file offset to a type_list
      * @param types contents of type list
      */
-    data class ProtoIdItem(val shortyIdx: Int, val returnTypeIdx: Int, val parametersOff: Int, val types: IntArray)
+    data class ProtoIdItem(
+        val shortyIdx: Int,
+        val returnTypeIdx: Int,
+        val parametersOff: Int,
+        var types: IntArray
+    )
 
     /**
      * Holds the contents of a field_id_item.
