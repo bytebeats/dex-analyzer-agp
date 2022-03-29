@@ -178,6 +178,16 @@ class DexParser(private val dexFile: RandomAccessFile) {
      */
     @Throws(IOException::class)
     internal fun parseFieldIds() {
+        val count = mHeaderItem.fieldIdsSize
+        println("Try to read $count fieldIds")
+        seek(mHeaderItem.fieldIdsOff)
+        mFieldIds = Array(count) {
+            FieldIdItem(
+                classIdx = readShort().toInt() and 0xffff,
+                typeIdx = readShort().toInt() and 0xffff,
+                nameIdx = readInt()
+            )
+        }
     }
 
     /**
