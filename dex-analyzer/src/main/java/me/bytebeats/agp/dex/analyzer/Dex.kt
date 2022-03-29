@@ -108,6 +108,156 @@ class Dex(private val dexFile: RandomAccessFile) {
     }
 
     /*
+  * =======================================================================
+  *      Queries
+  * =======================================================================
+  */
+
+    /**
+     * Returns the class name, given an index into the type_ids table.
+     */
+    private fun classNameFromTypeIndex(idx: Int): String {
+        return ""
+    }
+
+    /**
+     * Returns an array of method argument type strings, given an index
+     * into the proto_ids table.
+     */
+    private fun argArrayFromProtoIndex(idx: Int): Array<String> {
+        return emptyArray()
+    }
+
+    /**
+     * Returns a string representing the method's return type, given an
+     * index into the proto_ids table.
+     */
+    private fun returnTypeFromProtoIndex(idx: Int): String {
+        return ""
+    }
+
+    /**
+     * Returns an array with all the class references that don't
+     * correspond to classes in the DEX file.  Each class reference has
+     * a list of the referenced fields and methods associated with
+     * that class.
+     */
+    private fun getExternalReferences(): Array<ClassRef> {
+        return emptyArray()
+    }
+
+    /**
+     * Runs through the list of field references, inserting external
+     * references into the appropriate ClassRef.
+     */
+    private fun addExternalFieldReferences(refs: Array<ClassRef>) {
+
+    }
+
+    /**
+     * Runs through the list of method references, inserting external
+     * references into the appropriate ClassRef.
+     */
+    private fun addExternalMethodReferences(refs: Array<ClassRef>) {
+
+    }
+
+    /*
+    * BEGIN MODIFIED SECTION
+    */
+
+    /**
+     * Returns the array of all method references.
+     * @return method references
+     */
+    fun getMethodRefs(): Array<MethodRef> {
+        return emptyArray()
+    }
+
+    /**
+     * Returns the array of all field references.
+     * @return field references
+     */
+    fun getFieldRefs(): Array<FieldRef> {
+        return emptyArray()
+    }
+
+    /*
+     * END MODIFIED SECTION
+     */
+
+    /*
+    * =======================================================================
+    *      Basic I/O functions
+    * =======================================================================
+    */
+
+    /**
+     * Seeks the DEX file to the specified absolute position.
+     */
+    @Throws(IOException::class)
+    internal fun seek(position: Int) {
+
+    }
+
+    /**
+     * Fills the buffer by reading bytes from the DEX file.
+     */
+    @Throws(IOException::class)
+    internal fun readBytes(buffer: ByteArray) {
+
+    }
+
+    /**
+     * Reads a single signed byte value.
+     */
+    @Throws(IOException::class)
+    internal fun readByte(): Byte {
+        return 0.toByte()
+    }
+
+    /**
+     * Reads a signed 16-bit integer, byte-swapping if necessary.
+     */
+    @Throws(IOException::class)
+    internal fun readShort(): Short {
+        return 0.toShort()
+    }
+
+    /**
+     * Reads a signed 32-bit integer, byte-swapping if necessary.
+     */
+    @Throws(IOException::class)
+    internal fun readInt(): Int {
+        return 0
+    }
+
+    /**
+     * Reads a variable-length unsigned LEB128 value.  Does not attempt to
+     * verify that the value is valid.
+     *
+     * @throws java.io.EOFException if we run off the end of the file
+     */
+    @Throws(IOException::class)
+    internal fun readUnsignedLeb128() {
+
+    }
+
+    /**
+     * Reads a UTF-8 string.
+     *
+     * We don't know how long the UTF-8 string is, so we have to read one
+     * byte at a time.  We could make an educated guess based on the
+     * utf16_size and seek back if we get it wrong, but seeking backward
+     * may cause the underlying implementation to reload I/O buffers.
+     */
+    @Throws(IOException::class)
+    internal fun readString(): String {
+        return ""
+    }
+
+
+    /*
      * =======================================================================
      *      Internal "structure" declarations
      * =======================================================================
@@ -135,19 +285,19 @@ class Dex(private val dexFile: RandomAccessFile) {
 
         companion object {
             /* expected magic values */
-            val DEX_FILE_MAGIC_v035: ByteArray = "dex\n035\u0000".toByteArray(Charsets.US_ASCII)
+            private val DEX_FILE_MAGIC_v035: ByteArray = "dex\n035\u0000".toByteArray(Charsets.US_ASCII)
 
             // Dex version 036 skipped because of an old dalvik bug on some versions
             // of android where dex files with that version number would erroneously
             // be accepted and run. See: art/runtime/dex_file.cc
             // V037 was introduced in API LEVEL 24
-            val DEX_FILE_MAGIC_v037: ByteArray = "dex\n037\u0000".toByteArray(Charsets.US_ASCII)
+            private val DEX_FILE_MAGIC_v037: ByteArray = "dex\n037\u0000".toByteArray(Charsets.US_ASCII)
 
             // V038 was introduced in API LEVEL 26
-            val DEX_FILE_MAGIC_v038: ByteArray = "dex\n038\u0000".toByteArray(Charsets.US_ASCII)
+            private val DEX_FILE_MAGIC_v038: ByteArray = "dex\n038\u0000".toByteArray(Charsets.US_ASCII)
 
             // V039 was introduced in API LEVEL 28
-            val DEX_FILE_MAGIC_v039: ByteArray = "dex\n039\u0000".toByteArray(Charsets.US_ASCII)
+            private val DEX_FILE_MAGIC_v039: ByteArray = "dex\n039\u0000".toByteArray(Charsets.US_ASCII)
             const val ENDIAN_CONSTANT = 0x12345678
             const val REVERSE_ENDIAN_CONSTANT = 0x78563412
 
