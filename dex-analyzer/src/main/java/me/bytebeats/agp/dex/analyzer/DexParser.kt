@@ -195,6 +195,16 @@ class DexParser(private val dexFile: RandomAccessFile) {
      */
     @Throws(IOException::class)
     internal fun parseMethodIds() {
+        val count = mHeaderItem.methodIdsSize
+        println("Try to read $count methodIds")
+        seek(mHeaderItem.methodIdsOff)
+        mMethodIds = Array(count) {
+            MethodIdItem(
+                classIdx = readShort().toInt() and 0xffff,
+                protoIdx = readShort().toInt() and 0xffff,
+                nameIdx = readInt()
+            )
+        }
     }
 
     /**
