@@ -212,6 +212,21 @@ class DexParser(private val dexFile: RandomAccessFile) {
      */
     @Throws(IOException::class)
     internal fun parseClassDefs() {
+        val count = mHeaderItem.classDefsSize
+        println("Try to read $count classDefs")
+        seek(mHeaderItem.classDefsOff)
+        mClassDefs = Array(count) {
+            ClassDefItem(
+                classIdx = readInt(),
+                accessFlags = readInt(),
+                superclassIdx = readInt(),
+                interfacesOff = readInt(),
+                sourceFileIdx = readInt(),
+                annotationsOff = readInt(),
+                classDataOff = readInt(),
+                staticValuesOff = readInt()
+            )
+        }
     }
 
     /**
@@ -506,6 +521,15 @@ class DexParser(private val dexFile: RandomAccessFile) {
      *
      * @param classIdx index into type_ids
      */
-    data class ClassDefItem(val classIdx: Int)
+    data class ClassDefItem(
+        val classIdx: Int,
+        val accessFlags: Int,
+        val superclassIdx: Int,
+        val interfacesOff: Int,
+        val sourceFileIdx: Int,
+        val annotationsOff: Int,
+        val classDataOff: Int,
+        val staticValuesOff: Int,
+    )
 
 }
