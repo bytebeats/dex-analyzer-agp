@@ -9,4 +9,5 @@ package me.bytebeats.agp.dex.analyzer
  * @Description TO-DO
  */
 
-class DexNotParsedException : RuntimeException()
+class DexNotParsedException @JvmOverloads constructor(message: String? = null, t: Throwable? = null) :
+        RuntimeException(message, t)

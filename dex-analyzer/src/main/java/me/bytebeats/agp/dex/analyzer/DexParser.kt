@@ -1,8 +1,10 @@
 package me.bytebeats.agp.dex.analyzer
 
+import me.bytebeats.agp.dex.analyzer.DexParser.HeaderItem.Companion.ENDIAN_CONSTANT
+import me.bytebeats.agp.dex.analyzer.DexParser.HeaderItem.Companion.REVERSE_ENDIAN_CONSTANT
+import me.bytebeats.agp.dex.analyzer.DexParser.HeaderItem.Companion.verifyMagic
 import java.io.IOException
 import java.io.RandomAccessFile
-
 
 /**
  * @Author bytebeats
@@ -13,7 +15,7 @@ import java.io.RandomAccessFile
  * @Description TO-DO
  */
 
-class Dex(private val dexFile: RandomAccessFile) {
+class DexParser(private val dexFile: RandomAccessFile) {
     private lateinit var mHeaderItem: HeaderItem
     private lateinit var mStrings: Array<String>// strings from string_data_*
     private lateinit var mTypeIds: Array<TypeIdItem>
@@ -22,8 +24,8 @@ class Dex(private val dexFile: RandomAccessFile) {
     private lateinit var mMethodIds: Array<MethodIdItem>
     private lateinit var mClassDefs: Array<ClassDefItem>
 
-    private val tmpBuf = ByteArray(4)
-    private val isBigEndian = false
+    private val bufHelper = ByteArray(4)
+    private var isBigEndian = false
 
     /**
      * Loads the contents of the DEX file into our data structures.
@@ -51,6 +53,54 @@ class Dex(private val dexFile: RandomAccessFile) {
     @Throws(IOException::class)
     internal fun parseHeaderItem() {
         mHeaderItem = HeaderItem()
+
+        // magic number
+        seek(0)
+        val magic = ByteArray(8)
+        readBytes(magic)
+        if (!verifyMagic(magic)) {
+            println("Magic number is wrong. Are you sure this is a DEX file?")
+            throw DexNotParsedException("Wrong magic number")
+        }
+
+        /*
+         * Read the endian tag, so we properly swap things as we read
+         * them from here on.
+         */
+        //endian tag
+        seek(8 + 4 + 20 + 4 + 4)
+        mHeaderItem.endianTag = readInt()
+        if (mHeaderItem.endianTag == ENDIAN_CONSTANT) {
+            // do nothing here
+            isBigEndian = false
+        } else if (mHeaderItem.endianTag == REVERSE_ENDIAN_CONSTANT) {
+            isBigEndian = true
+        } else {
+            println("Endian constant has unexpected value: ${Integer.toHexString(mHeaderItem.endianTag)}")
+            throw DexNotParsedException("Unexpected endian constant: ${Integer.toHexString(mHeaderItem.endianTag)}")
+        }
+        //magic, checksum, signature
+        seek(8 + 4 + 20)
+        mHeaderItem.fileSize = readInt()
+        mHeaderItem.headerSize = readInt()
+        mHeaderItem.endianTag = readInt()
+        mHeaderItem.linkSize = readInt()
+        mHeaderItem.linkOff = readInt()
+        mHeaderItem.mapOff = readInt()
+        mHeaderItem.stringIdsSize = readInt()
+        mHeaderItem.stringIdsOff = readInt()
+        mHeaderItem.typeIdsSize = readInt()
+        mHeaderItem.typeIdsOff = readInt()
+        mHeaderItem.protoIdsSize = readInt()
+        mHeaderItem.protoIdsOff = readInt()
+        mHeaderItem.fieldIdsSize = readInt()
+        mHeaderItem.fieldIdsOff = readInt()
+        mHeaderItem.methodIdsSize = readInt()
+        mHeaderItem.methodIdsOff = readInt()
+        mHeaderItem.classDefsSize = readInt()
+        mHeaderItem.classDefsOff = readInt()
+        mHeaderItem.dataSize = readInt()
+        mHeaderItem.dataOff = readInt()
     }
 
     /**
@@ -62,38 +112,53 @@ class Dex(private val dexFile: RandomAccessFile) {
      */
     @Throws(IOException::class)
     internal fun parseStrings() {
+        val count = mHeaderItem.stringIdsSize
+        val strIdxOffsets = IntArray(count)
+
+        println("Trying to read $count Strings")
+
+        seek(mHeaderItem.stringIdsOff)
+        for (i in 0 until count) {
+            strIdxOffsets[i] = readInt()
+        }
+        mStrings = Array(count) { "" }
+        seek(strIdxOffsets[0])
+        for (i in 0 until count) {
+            seek(strIdxOffsets[i])
+            mStrings[i] = readString()
+        }
     }
 
     /**
-     * Loads the type ID list.
+     * Loads the type ID array.
      */
     @Throws(IOException::class)
     internal fun parseTypeIds() {
     }
 
     /**
-     * Loads the proto ID list.
+     * Loads the proto ID array.
      */
     @Throws(IOException::class)
     internal fun parseProtoIds() {
     }
 
     /**
-     * Loads the field ID list.
+     * Loads the field ID array.
      */
     @Throws(IOException::class)
     internal fun parseFieldIds() {
     }
 
     /**
-     * Loads the method ID list.
+     * Loads the method ID array.
      */
     @Throws(IOException::class)
     internal fun parseMethodIds() {
     }
 
     /**
-     * Loads the class defs list.
+     * Loads the class defs array.
      */
     @Throws(IOException::class)
     internal fun parseClassDefs() {
@@ -197,7 +262,7 @@ class Dex(private val dexFile: RandomAccessFile) {
      */
     @Throws(IOException::class)
     internal fun seek(position: Int) {
-
+        dexFile.seek(position.toLong())
     }
 
     /**
@@ -205,7 +270,7 @@ class Dex(private val dexFile: RandomAccessFile) {
      */
     @Throws(IOException::class)
     internal fun readBytes(buffer: ByteArray) {
-
+        dexFile.readFully(buffer)
     }
 
     /**
@@ -213,7 +278,8 @@ class Dex(private val dexFile: RandomAccessFile) {
      */
     @Throws(IOException::class)
     internal fun readByte(): Byte {
-        return 0.toByte()
+        dexFile.readFully(bufHelper, 0, 1)
+        return bufHelper[0]
     }
 
     /**
@@ -221,7 +287,9 @@ class Dex(private val dexFile: RandomAccessFile) {
      */
     @Throws(IOException::class)
     internal fun readShort(): Short {
-        return 0.toShort()
+        dexFile.readFully(bufHelper, 0, 2)
+        return if (isBigEndian) ((bufHelper[1].toInt() and 0xff) or ((bufHelper[0].toInt() and 0xff) shl 8)).toShort()
+        else ((bufHelper[0].toInt() and 0xff) or ((bufHelper[1].toInt() and 0xff) shl 8)).toShort()
     }
 
     /**
@@ -229,18 +297,28 @@ class Dex(private val dexFile: RandomAccessFile) {
      */
     @Throws(IOException::class)
     internal fun readInt(): Int {
-        return 0
+        dexFile.readFully(bufHelper)
+        return if (isBigEndian)
+            ((bufHelper[3].toInt() and 0xff) or ((bufHelper[2].toInt() and 0xff) shl 8) or ((bufHelper[1].toInt() and 0xff) shl 16) or ((bufHelper[0].toInt() and 0xff) shl 24))
+        else
+            ((bufHelper[0].toInt() and 0xff) or ((bufHelper[1].toInt() and 0xff) shl 8) or ((bufHelper[2].toInt() and 0xff) shl 16) or ((bufHelper[3].toInt() and 0xff) shl 24))
     }
 
     /**
-     * Reads a variable-length unsigned LEB128 value.  Does not attempt to
-     * verify that the value is valid.
+     * Reads a variable-length unsigned LEB128 value.
+     * Does not attempt to verify that the value is valid.
      *
      * @throws java.io.EOFException if we run off the end of the file
      */
     @Throws(IOException::class)
-    internal fun readUnsignedLeb128() {
-
+    internal fun readUnsignedLeb128(): Int {
+        var result = 0
+        var b: Byte
+        do {
+            b = readByte()
+            result = (result shl 7) or (b.toInt() and 0x7f)
+        } while (b < 0)
+        return result
     }
 
     /**
@@ -253,7 +331,16 @@ class Dex(private val dexFile: RandomAccessFile) {
      */
     @Throws(IOException::class)
     internal fun readString(): String {
-        return ""
+        val utf16Len = readUnsignedLeb128()
+        val bytes = ByteArray(utf16Len * 3) //worst case
+        var idx = 0
+        for (i in bytes.indices) {
+            idx = i
+            val b = readByte()
+            if (b.toInt() == 0) break
+            bytes[idx] = b
+        }
+        return String(bytes, 0, idx, Charsets.UTF_8)
     }
 
 
@@ -270,6 +357,9 @@ class Dex(private val dexFile: RandomAccessFile) {
         var fileSize = 0
         var headerSize = 0
         var endianTag = 0
+        var linkSize = 0
+        var linkOff = 0
+        var mapOff = 0
         var stringIdsSize = 0
         var stringIdsOff = 0
         var typeIdsSize = 0
@@ -282,6 +372,8 @@ class Dex(private val dexFile: RandomAccessFile) {
         var methodIdsOff = 0
         var classDefsSize = 0
         var classDefsOff = 0
+        var dataSize = 0
+        var dataOff = 0
 
         companion object {
             /* expected magic values */

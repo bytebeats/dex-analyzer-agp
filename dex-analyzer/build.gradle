@@ -2,6 +2,7 @@ plugins {
     id 'groovy'
     id 'com.microsoft.thrifty' version '3.0.0'
     id 'java-gradle-plugin'
+    id 'kotlin'
     id 'com.gradle.plugin-publish' version '0.15.0'
     id 'java-library'
 }
