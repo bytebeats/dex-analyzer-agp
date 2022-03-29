@@ -137,7 +137,7 @@ class DexParser(private val dexFile: RandomAccessFile) {
         println("Try to read $count typeIds")
         seek(mHeaderItem.typeIdsOff)
         mTypeIds = Array(count) {
-            TypeIdItem(descriptorIdx = readInt(), true)
+            TypeIdItem(descriptorIdx = readInt(), false)
         }
     }
 
@@ -234,7 +234,17 @@ class DexParser(private val dexFile: RandomAccessFile) {
      * DEX file or within the VM (e.g. primitive classes and arrays).
      */
     internal fun markInternalClasses() {
-
+        for (classDefItem in mClassDefs.reversed()) {
+            mTypeIds[classDefItem.classIdx].internal = true
+        }
+        for (typeId in mTypeIds) {
+            val className = mStrings[typeId.descriptorIdx]
+            if (className.length == 1) {
+                typeId.internal = true//primitive class
+            } else if (className[0] == '[') {//array
+                typeId.internal = true
+            }
+        }
     }
 
     /*
@@ -247,7 +257,7 @@ class DexParser(private val dexFile: RandomAccessFile) {
      * Returns the class name, given an index into the type_ids table.
      */
     private fun classNameFromTypeIndex(idx: Int): String {
-        return ""
+        return mStrings[mTypeIds[idx].descriptorIdx]
     }
 
     /**
@@ -255,7 +265,11 @@ class DexParser(private val dexFile: RandomAccessFile) {
      * into the proto_ids table.
      */
     private fun argArrayFromProtoIndex(idx: Int): Array<String> {
-        return emptyArray()
+        val protoId = mProtoIds[idx]
+        val args = Array(protoId.types.size) { i ->
+            mStrings[mTypeIds[protoId.types[i]].descriptorIdx]
+        }
+        return args
     }
 
     /**
@@ -263,7 +277,8 @@ class DexParser(private val dexFile: RandomAccessFile) {
      * index into the proto_ids table.
      */
     private fun returnTypeFromProtoIndex(idx: Int): String {
-        return ""
+        val protoId = mProtoIds[idx]
+        return mStrings[mTypeIds[protoId.returnTypeIdx].descriptorIdx]
     }
 
     /**
@@ -273,23 +288,67 @@ class DexParser(private val dexFile: RandomAccessFile) {
      * that class.
      */
     private fun getExternalReferences(): Array<ClassRef> {
-        return emptyArray()
+        // create a sparse array of ClassRef that parallels mTypeIds
+        var count = 0
+        val sparseRefs = Array(mTypeIds.size) { i ->
+            // create entries for all externally-referenced classes
+            if (!mTypeIds[i].internal) {
+                count++
+                ClassRef(mStrings[mTypeIds[i].descriptorIdx])
+            } else null
+        }
+        // add fields and methods to the appropriate class entry
+        addExternalFieldReferences(sparseRefs)
+        addExternalMethodReferences(sparseRefs)
+
+        // crunch out the sparseness
+        var idx = 0
+        val classRefs = mutableListOf<ClassRef>()
+        for (i in mTypeIds.indices) {
+            if (sparseRefs[i] != null) {
+                idx++
+                classRefs.add(sparseRefs[i]!!)
+            }
+        }
+        assert(count == idx)
+        return classRefs.toTypedArray()
     }
 
     /**
      * Runs through the list of field references, inserting external
      * references into the appropriate ClassRef.
      */
-    private fun addExternalFieldReferences(refs: Array<ClassRef>) {
-
+    private fun addExternalFieldReferences(sparseRefs: Array<ClassRef?>) {
+        for (i in mFieldIds.indices) {
+            val fieldId = mFieldIds[i]
+            if (!mTypeIds[fieldId.classIdx].internal) {
+                val fieldRef = FieldRef(
+                    classNameFromTypeIndex(fieldId.classIdx),
+                    classNameFromTypeIndex(fieldId.typeIdx),
+                    mStrings[fieldId.nameIdx]
+                )
+                sparseRefs[fieldId.classIdx]?.addField(fieldRef)
+            }
+        }
     }
 
     /**
      * Runs through the list of method references, inserting external
      * references into the appropriate ClassRef.
      */
-    private fun addExternalMethodReferences(refs: Array<ClassRef>) {
-
+    private fun addExternalMethodReferences(sparseRefs: Array<ClassRef?>) {
+        for (i in mMethodIds.indices) {
+            val methodId = mMethodIds[i]
+            if (!mTypeIds[methodId.classIdx].internal) {
+                val methodRef = MethodRef(
+                    classNameFromTypeIndex(methodId.classIdx),
+                    mStrings[methodId.nameIdx],
+                    argArrayFromProtoIndex(methodId.protoIdx),
+                    returnTypeFromProtoIndex(methodId.protoIdx),
+                )
+                sparseRefs[methodId.classIdx]?.addMethod(methodRef)
+            }
+        }
     }
 
     /*
@@ -301,7 +360,15 @@ class DexParser(private val dexFile: RandomAccessFile) {
      * @return method references
      */
     fun getMethodRefs(): Array<MethodRef> {
-        return emptyArray()
+        return Array(mMethodIds.size) { i ->
+            val methodId = mMethodIds[i]
+            MethodRef(
+                classNameFromTypeIndex(methodId.classIdx),
+                mStrings[methodId.nameIdx],
+                argArrayFromProtoIndex(methodId.protoIdx),
+                returnTypeFromProtoIndex(methodId.protoIdx)
+            )
+        }
     }
 
     /**
@@ -309,7 +376,14 @@ class DexParser(private val dexFile: RandomAccessFile) {
      * @return field references
      */
     fun getFieldRefs(): Array<FieldRef> {
-        return emptyArray()
+        return Array(mFieldIds.size) { i ->
+            val fieldId = mFieldIds[i]
+            FieldRef(
+                classNameFromTypeIndex(fieldId.classIdx),
+                mStrings[fieldId.nameIdx],
+                classNameFromTypeIndex(fieldId.typeIdx)
+            )
+        }
     }
 
     /*
