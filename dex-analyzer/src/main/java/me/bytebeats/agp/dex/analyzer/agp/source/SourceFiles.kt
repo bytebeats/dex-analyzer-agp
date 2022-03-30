@@ -134,8 +134,26 @@ fun extractJarFromAar(aar: File): SourceFile {
 }
 
 @Throws(IOException::class)
-fun extractDexFromZip(zip: File): List<SourceFile> {
-    return emptyList()
+fun extractDexFromZip(zipFile: File): List<SourceFile> {
+    val sourceFiles = mutableListOf<SourceFile>()
+    try {
+        val zip = ZipFile(zipFile)
+        val entries = zip.entries()
+        while (entries.hasMoreElements()) {
+            val entry = entries.nextElement()
+            val entryName = entry.name
+            if (!CLASSES_DEX.matcher(entryName).matches()) {
+                continue
+            }
+            val tmp = makeTempFile(entryName)
+            val inputStream = zip.getInputStream(entry)
+            FileUtils.copyInputStreamToFile(inputStream, tmp)
+            sourceFiles.add(DexFile(tmp, true))
+        }
+    } catch (e: IOException) {
+        throw IOException("Something bad happens", e)
+    }
+    return sourceFiles
 }
 
 fun extractJarFromJar(jarFile: File): SourceFile {
