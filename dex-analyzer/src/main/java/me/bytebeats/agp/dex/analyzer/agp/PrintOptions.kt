@@ -1,8 +1,5 @@
 package me.bytebeats.agp.dex.analyzer.agp
 
-import com.google.auto.value.AutoValue
-import javax.annotation.Nullable
-
 /**
  * @Author bytebeats
  * @Email <happychinapc@gmail.com>
@@ -12,63 +9,147 @@ import javax.annotation.Nullable
  * @Description TO-DO
  */
 
-@AutoValue
-abstract class PrintOptions : java.io.Serializable {
-    abstract fun getIncludeClasses(): Boolean
-    abstract fun getIncludeClassCount(): Boolean
-    abstract fun getIncludeMethodCount(): Boolean
-    abstract fun getIncludeFieldCount(): Boolean
-    abstract fun getIncludeTotalMethodCount(): Boolean
-    abstract fun getTeamCityIntegration(): Boolean
+class PrintOptions private constructor(
+    private val includeClasses: Boolean,
+    private val includeClassCount: Boolean,
+    private val includeMethodCount: Boolean,
+    private val includeFieldCount: Boolean,
+    private val includeTotalMethodCount: Boolean,
+    private val printHeader: Boolean,
+    private val orderByMethodCount: Boolean,
+    private val maxTreeDepth: Int,
+    private val maxMethodCount: Int,
+    private val printDeclarations: Boolean,
+    private val androidProject: Boolean,
+    private val verbose: Boolean,
+    private val outputFormat: OutputFormat = OutputFormat.LIST
+) : java.io.Serializable {
+    fun getIncludeClasses(): Boolean = includeClasses
+    fun getIncludeClassCount(): Boolean = includeClassCount
+    fun getIncludeMethodCount(): Boolean = includeMethodCount
+    fun getIncludeFieldCount(): Boolean = includeFieldCount
+    fun getIncludeTotalMethodCount(): Boolean = includeTotalMethodCount
+    fun getPrintHeader(): Boolean = printHeader
+    fun getOrderByMethodCount(): Boolean = orderByMethodCount
+    fun getMaxTreeDepth(): Int = maxTreeDepth
+    fun getMaxMethodCount(): Int = maxMethodCount
+    fun getPrintDeclarations(): Boolean = printDeclarations
+    fun isAndroidProject(): Boolean = androidProject
+    fun isVerbose(): Boolean = verbose
+    fun getOutputFormat(): OutputFormat = outputFormat
 
-    @Nullable
-    abstract fun getTeamCitySlug(): String?
-    abstract fun getPrintHeader(): Boolean
-    abstract fun getOrderByMethodCount(): Boolean
-    abstract fun getMaxTreeDepth(): Int
-    abstract fun getMaxMethodCount(): Int
-    abstract fun getPrintDeclarations(): Boolean
-    abstract fun isAndroidProject(): Boolean
-    abstract fun isVerbose(): Boolean
-    abstract fun getOutputFormat(): OutputFormat
+    fun toBuilder(): Builder = Builder().setIncludeClasses(includeClasses).setIncludeClassCount(includeClassCount)
+        .setIncludeMethodCount(includeMethodCount).setIncludeFieldCount(includeFieldCount)
+        .setIncludeTotalMethodCount(includeTotalMethodCount).setPrintHeader(printHeader)
+        .setOrderByMethodCount(orderByMethodCount).setMaxTreeDepth(maxTreeDepth).setMaxMethodCount(maxMethodCount)
+        .setPrintDeclarations(printDeclarations).setAndroidProject(androidProject).setVerbose(verbose)
+        .setOutputFormat(outputFormat)
 
-    abstract fun toBuilder(): Builder
+    class Builder {
+        private var includeClasses: Boolean = false
+        private var includeClassCount: Boolean = false
+        private var includeMethodCount: Boolean = false
+        private var includeFieldCount: Boolean = false
+        private var includeTotalMethodCount: Boolean = false
+        private var printHeader: Boolean = false
+        private var orderByMethodCount: Boolean = false
+        private var maxTreeDepth: Int = 0
+        private var maxMethodCount: Int = 0
+        private var printDeclarations: Boolean = false
+        private var androidProject: Boolean = true
+        private var verbose: Boolean = false
+        private var outputFormat: OutputFormat = OutputFormat.LIST
 
-    fun withProjectIsAndroid(isAndroidProject: Boolean): PrintOptions {
-        return toBuilder().setAndroidProject(isAndroidProject).build()
-    }
+        fun setIncludeClasses(includeClasses: Boolean): Builder {
+            this.includeClasses = includeClasses
+            return this
+        }
 
-    @AutoValue.Builder
-    abstract class Builder {
-        abstract fun setIncludeClasses(includeClasses: Boolean): Builder
-        abstract fun setIncludeClassCount(includeClassCount: Boolean): Builder
-        abstract fun setIncludeMethodCount(includeMethodCount: Boolean): Builder
-        abstract fun setIncludeFieldCount(includeFieldCount: Boolean): Builder
-        abstract fun setIncludeTotalMethodCount(includeTotalMethodCount: Boolean): Builder
-        abstract fun setTeamCityIntegration(teamCityIntegration: Boolean): Builder
-        abstract fun setTeamCitySlug(teamCitySlug: String?): Builder
-        abstract fun setPrintHeader(printHeader: Boolean): Builder
-        abstract fun setOrderByMethodCount(orderByMethodCount: Boolean): Builder
-        abstract fun setMaxTreeDepth(maxTreeDepth: Int): Builder
-        abstract fun setMaxMethodCount(maxMethodCount: Int): Builder
-        abstract fun setPrintDeclarations(printDeclarations: Boolean): Builder
-        abstract fun setAndroidProject(androidProject: Boolean): Builder
-        abstract fun setVerbose(verbose: Boolean): Builder
-        abstract fun setOutputFormat(outputFormat: OutputFormat): Builder
+        fun setIncludeClassCount(includeClassCount: Boolean): Builder {
+            this.includeClassCount = includeClassCount
+            return this
+        }
 
-        abstract fun build(): PrintOptions
+        fun setIncludeMethodCount(includeMethodCount: Boolean): Builder {
+            this.includeMethodCount = includeMethodCount
+            return this
+        }
+
+        fun setIncludeFieldCount(includeFieldCount: Boolean): Builder {
+            this.includeFieldCount = includeFieldCount
+            return this
+        }
+
+        fun setIncludeTotalMethodCount(includeTotalMethodCount: Boolean): Builder {
+            this.includeTotalMethodCount = includeTotalMethodCount
+            return this
+        }
+
+        fun setPrintHeader(printHeader: Boolean): Builder {
+            this.printHeader = printHeader
+            return this
+        }
+
+        fun setOrderByMethodCount(orderByMethodCount: Boolean): Builder {
+            this.orderByMethodCount = orderByMethodCount
+            return this
+        }
+
+        fun setMaxTreeDepth(maxTreeDepth: Int): Builder {
+            this.maxTreeDepth = maxTreeDepth
+            return this
+        }
+
+        fun setMaxMethodCount(maxMethodCount: Int): Builder {
+            this.maxMethodCount = maxMethodCount
+            return this
+        }
+
+        fun setPrintDeclarations(printDeclarations: Boolean): Builder {
+            this.printDeclarations = printDeclarations
+            return this
+        }
+
+        fun setAndroidProject(androidProject: Boolean): Builder {
+            this.androidProject = androidProject
+            return this
+        }
+
+        fun setVerbose(verbose: Boolean): Builder {
+            this.verbose = verbose
+            return this
+        }
+
+        fun setOutputFormat(outputFormat: OutputFormat): Builder {
+            this.outputFormat = outputFormat
+            return this
+        }
+
+        fun build(): PrintOptions = PrintOptions(
+            includeClasses,
+            includeClassCount,
+            includeMethodCount,
+            includeFieldCount,
+            includeTotalMethodCount,
+            printHeader,
+            orderByMethodCount,
+            maxTreeDepth,
+            maxMethodCount,
+            printDeclarations,
+            androidProject,
+            verbose,
+            outputFormat
+        )
     }
 
     companion object {
         fun builder(): Builder {
-            return AutoValue_PrintOptions.Builder()
+            return Builder()
                 .setIncludeClasses(false)
                 .setIncludeClassCount(false)
                 .setIncludeMethodCount(true)
                 .setIncludeFieldCount(false)
                 .setIncludeTotalMethodCount(false)
-                .setTeamCityIntegration(false)
-                .setTeamCitySlug(null)
                 .setPrintHeader(false)
                 .setOrderByMethodCount(false)
                 .setMaxTreeDepth(Integer.MAX_VALUE)
@@ -79,15 +160,13 @@ abstract class PrintOptions : java.io.Serializable {
                 .setOutputFormat(OutputFormat.LIST)
         }
 
-        fun fromDexCountExtension(ext: DexAnalyzeExtension): PrintOptions {
+        fun fromDexAnalyzeExtension(ext: DexAnalyzeExtension): PrintOptions {
             return builder()
                 .setIncludeClasses(ext.includeClasses.get())
                 .setIncludeClassCount(ext.includeClassCount.get())
                 .setIncludeMethodCount(true)
                 .setIncludeFieldCount(ext.includeFieldCount.get())
                 .setIncludeTotalMethodCount(ext.includeTotalMethodCount.get())
-                .setTeamCityIntegration(ext.teamCityIntegration.get())
-                .setTeamCitySlug(ext.teamCitySlug.orNull)
                 .setPrintHeader(ext.printVersion.get())
                 .setPrintDeclarations(ext.printDeclarations.get())
                 .setMaxTreeDepth(ext.maxTreeDepth.get())

@@ -101,24 +101,6 @@ class DexAnalyzeExtension @Inject constructor(objectFactory: ObjectFactory, prov
     @Input
     val maxTreeDepth: Property<Int> = maxTreeDepthProperty
 
-    private val teamCityIntegrationProperty: Property<Boolean> = objectFactory.property(Boolean::class.java)
-        .convention(providerFactory.provider { System.getenv("TEAMCITY_VERSION") != null })
-
-    /**
-     * When true, Team City integration strings will be printed. If the TEAMCITY_VERSION System
-     * environment variable is defined this will become true by default.
-     */
-    @Internal("TeamCity stats are stdout-only")
-    val teamCityIntegration: Property<Boolean> = teamCityIntegrationProperty
-
-    private val teamCitySlugProperty: Property<String> = objectFactory.property(String::class.java)
-
-    /**
-     * A string which, if specified, will be added to TeamCity stat names. Null by default.
-     */
-    @Internal("TeamCity stats are stdout-only")
-    val teamCitySlug: Property<String> = teamCitySlugProperty
-
     private val maxMethodCountProperty: Property<Int> = objectFactory.property(Int::class.java).convention(-1)
 
     /**
