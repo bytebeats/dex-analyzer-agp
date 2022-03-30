@@ -1,8 +1,7 @@
-package me.bytebeats.agp.dex.analyzer.agp.tree.worker.impl
+package me.bytebeats.agp.dex.analyzer.agp.tree.worker
 
 import me.bytebeats.agp.dex.analyzer.DexNotParsedException
 import me.bytebeats.agp.dex.analyzer.agp.Deobfuscator
-import me.bytebeats.agp.dex.analyzer.agp.tree.worker.AbstractWorker
 import org.gradle.api.file.RegularFileProperty
 import java.io.IOException
 
@@ -15,7 +14,7 @@ import java.io.IOException
  * @Description TO-DO
  */
 
-abstract class Agp7Worker<P : Agp7Worker.Parameters> : AbstractWorker<P>() {
+abstract class AbstractModernWorker<P : AbstractModernWorker.Parameters> : AbstractWorker<P>() {
     interface Parameters : AbstractWorker.Parameters {
         fun getMappingFile(): RegularFileProperty
     }
