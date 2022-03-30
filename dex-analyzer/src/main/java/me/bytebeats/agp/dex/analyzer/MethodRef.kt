@@ -15,13 +15,13 @@ package me.bytebeats.agp.dex.analyzer
  *
  */
 data class MethodRef(
-    val declaredClass: String,
-    val methodName: String,
+    val declaringClassName: String,
+    val name: String,
     val parameterTypes: Array<String>,
     val returnType: String,
-) : HasClassDeclared {
-    override fun getDeclaredClassName(): String {
-        return declaredClass
+) : HasDeclaringClass {
+    override fun getDeclaringClassName(): String {
+        return declaringClassName
     }
 
     /**
@@ -46,8 +46,8 @@ data class MethodRef(
 
         other as MethodRef
 
-        if (declaredClass != other.declaredClass) return false
-        if (methodName != other.methodName) return false
+        if (declaringClassName != other.declaringClassName) return false
+        if (name != other.name) return false
         if (!parameterTypes.contentEquals(other.parameterTypes)) return false
         if (returnType != other.returnType) return false
 
@@ -55,8 +55,8 @@ data class MethodRef(
     }
 
     override fun hashCode(): Int {
-        var result = declaredClass.hashCode()
-        result = 31 * result + methodName.hashCode()
+        var result = declaringClassName.hashCode()
+        result = 31 * result + name.hashCode()
         result = 31 * result + parameterTypes.contentHashCode()
         result = 31 * result + returnType.hashCode()
         return result

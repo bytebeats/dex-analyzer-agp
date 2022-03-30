@@ -9,6 +9,6 @@ package me.bytebeats.agp.dex.analyzer
  * @Description TO-DO
  */
 
-interface HasClassDeclared {
-    fun getDeclaredClassName(): String
+interface HasDeclaringClass {
+    fun getDeclaringClassName(): String
 }

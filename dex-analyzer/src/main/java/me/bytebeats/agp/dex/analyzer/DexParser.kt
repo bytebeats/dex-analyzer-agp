@@ -287,7 +287,7 @@ class DexParser(private val dexFile: RandomAccessFile) {
      * a list of the referenced fields and methods associated with
      * that class.
      */
-    private fun getExternalReferences(): Array<ClassRef> {
+    fun getExternalReferences(): Array<ClassRef> {
         // create a sparse array of ClassRef that parallels mTypeIds
         var count = 0
         val sparseRefs = Array(mTypeIds.size) { i ->
@@ -318,7 +318,7 @@ class DexParser(private val dexFile: RandomAccessFile) {
      * Runs through the list of field references, inserting external
      * references into the appropriate ClassRef.
      */
-    private fun addExternalFieldReferences(sparseRefs: Array<ClassRef?>) {
+    fun addExternalFieldReferences(sparseRefs: Array<ClassRef?>) {
         for (i in mFieldIds.indices) {
             val fieldId = mFieldIds[i]
             if (!mTypeIds[fieldId.classIdx].internal) {
@@ -336,7 +336,7 @@ class DexParser(private val dexFile: RandomAccessFile) {
      * Runs through the list of method references, inserting external
      * references into the appropriate ClassRef.
      */
-    private fun addExternalMethodReferences(sparseRefs: Array<ClassRef?>) {
+    fun addExternalMethodReferences(sparseRefs: Array<ClassRef?>) {
         for (i in mMethodIds.indices) {
             val methodId = mMethodIds[i]
             if (!mTypeIds[methodId.classIdx].internal) {

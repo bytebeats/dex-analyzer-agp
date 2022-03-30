@@ -10,7 +10,7 @@ package me.bytebeats.agp.dex.analyzer
  * @Description TO-DO
  */
 data class ClassRef(
-    val className: String,
+    val name: String,
     val fields: MutableList<FieldRef> = mutableListOf(),
     val methods: MutableList<MethodRef> = mutableListOf()
 ) {

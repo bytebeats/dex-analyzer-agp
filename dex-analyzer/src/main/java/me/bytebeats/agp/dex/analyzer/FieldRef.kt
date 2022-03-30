@@ -10,8 +10,8 @@ package me.bytebeats.agp.dex.analyzer
  */
 
 /**
- * @param fieldType like "Ljava/lang/String;"
+ * @param type like "Ljava/lang/String;"
  */
-data class FieldRef(val declaredClass: String, val fieldName: String, val fieldType: String) : HasClassDeclared {
-    override fun getDeclaredClassName(): String = declaredClass
+data class FieldRef(val declaringClass: String, val name: String, val type: String) : HasDeclaringClass {
+    override fun getDeclaringClassName(): String = declaringClass
 }
