@@ -2,9 +2,15 @@
 buildscript {
     ext.kotlin_version = '1.6.10'
     repositories {
-        google()
+        maven {
+            url 'https://maven.aliyun.com/nexus/content/groups/public/'
+        }
+        maven {
+            url 'https://maven.aliyun.com/nexus/content/repositories/jcenter'
+        }
         mavenCentral()
         gradlePluginPortal()
+        google()
     }
     dependencies {
         classpath "com.android.tools.build:gradle:7.0.4"

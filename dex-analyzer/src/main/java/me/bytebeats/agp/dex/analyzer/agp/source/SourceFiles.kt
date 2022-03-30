@@ -1,5 +1,9 @@
 package me.bytebeats.agp.dex.analyzer.agp.source
 
+import com.android.tools.r8.CompilationFailedException
+import com.android.tools.r8.D8
+import com.android.tools.r8.D8Command
+import com.android.tools.r8.OutputMode
 import javassist.ByteArrayClassPath
 import javassist.ClassPool
 import javassist.CtBehavior
@@ -10,6 +14,7 @@ import me.bytebeats.agp.dex.analyzer.FieldRef
 import me.bytebeats.agp.dex.analyzer.MethodRef
 import me.bytebeats.agp.dex.analyzer.agp.DexAnalyzeFailException
 import org.apache.commons.io.FileUtils
+import org.apache.commons.io.IOUtils
 import java.io.File
 import java.io.IOException
 import java.nio.file.FileVisitResult
@@ -50,9 +55,82 @@ fun extractDex(file: File?): List<SourceFile> {
 }
 
 @Throws(IOException::class)
-fun extractDexFromAar(aar: File): List<SourceFile> {
+private fun extractDexFromAar(aar: File): List<SourceFile> {
+    var minSdk = 13
+    var tmpClasses: File? = null
+    try {
+        val zip = ZipFile(aar)
+        val entries = zip.entries()
+        while (entries.hasMoreElements()) {
+            val entry = entries.nextElement()
+            val entryName = entry.name
+            var text = ""
+            if ("AndroidManifest.xml" == entryName) {
+                val inputStream = zip.getInputStream(entry)
+                text = IOUtils.toString(inputStream, Charsets.UTF_8)
+                val matcher = MIN_SDK_VERSION.matcher(text)
+                if (!matcher.find()) {
+                    continue
+                } else {
+                    minSdk = text.toInt()
+                }
+            }
+            if (CLASSES_JAR.matcher(entryName).matches()) {
+                tmpClasses = makeTempFile(entryName)
+                val inputStream = zip.getInputStream(entry)
+                FileUtils.copyInputStreamToFile(inputStream, tmpClasses)
+            }
+        }
+        if (tmpClasses == null) {
+            throw IllegalArgumentException("No classes.jar entry found in ${aar.canonicalPath}")
+        }
 
-    return emptyList()
+        val tmpDexDir = Files.createTempDirectory("dex")
+        tmpDexDir.toFile().deleteOnExit()
+
+        val d8Cmd = D8Command.builder()
+            .addProgramFiles(tmpClasses.toPath())
+            .setMinApiLevel(minSdk)
+            .setOutput(tmpDexDir, OutputMode.DexIndexed)
+            .build()
+        D8.run(d8Cmd)
+
+        val sourceFiles = mutableListOf<SourceFile>()
+        for (path in Files.list(tmpDexDir)) {
+            if (Files.isRegularFile(path)) {
+                sourceFiles.add(DexFile(path.toFile(), true))
+            }
+        }
+        return sourceFiles
+    } catch (e: IllegalArgumentException) {
+        throw DexAnalyzeFailException("No classes.jar entry found in ${aar.canonicalPath}", e)
+    } catch (e: CompilationFailedException) {
+        throw DexAnalyzeFailException("Fail to run D8 on an AAr", e)
+    }
+}
+
+@Throws(IOException::class)
+fun extractJarFromAar(aar: File): SourceFile {
+    try {
+        val zip = ZipFile(aar)
+        val entries = zip.entries()
+        var tmpClassesJar: File? = null
+        while (entries.hasMoreElements()) {
+            val entry = entries.nextElement()
+            if (!CLASSES_JAR.matcher(entry.name).matches()) {
+                continue
+            }
+            tmpClassesJar = makeTempFile(entry.name)
+            val inputStream = zip.getInputStream(entry)
+            FileUtils.copyInputStreamToFile(inputStream, tmpClassesJar)
+        }
+        if (tmpClassesJar == null) {
+            throw IllegalArgumentException("No classes.jar entry found in ${aar.canonicalPath}")
+        }
+        return extractJarFromJar(tmpClassesJar)
+    } catch (e: Exception) {
+        throw DexAnalyzeFailException("Fail to extract from aar: ${aar.canonicalPath}", e)
+    }
 }
 
 @Throws(IOException::class)
