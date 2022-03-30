@@ -34,7 +34,7 @@ class DexAnalyzeExtension @Inject constructor(objectFactory: ObjectFactory, prov
      * The format of the method count output, either "list", "tree", "json", or "yaml".
      */
     @Input
-    private val outputFormat: Property<OutputFormat> = outputFormatProperty
+    val outputFormat: Property<OutputFormat> = outputFormatProperty
 
     private val includeClassesProperty: Property<Boolean> =
         objectFactory.property(Boolean::class.java).convention(false)
